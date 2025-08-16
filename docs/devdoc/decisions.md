@@ -1,4 +1,4 @@
-# IronLattice Gateway - Architectural Decisions Log (ADRs)
+# Drizzle Gateway - Architectural Decisions Log (ADRs)
 
 This file documents important decisions made during the design and development of IronLattice Gateway.
 
