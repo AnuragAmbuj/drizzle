@@ -1,4 +1,4 @@
-# IronLattice Gateway — DDD Blueprint
+# Drizzle Gateway — DDD Blueprint
 
 ## 1) Bounded Contexts
 

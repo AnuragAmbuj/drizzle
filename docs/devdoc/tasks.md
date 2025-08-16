@@ -1,4 +1,4 @@
-# IronLattice Gateway - Tasks
+# Drizzle Gateway - Tasks
 
 This file tracks ongoing tasks, milestones, and development steps for IronLattice Gateway.
 

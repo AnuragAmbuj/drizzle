@@ -1,6 +1,6 @@
-# IronLattice Gateway
+# Drizzle Gateway by IronLattice Labs
 
-**IronLattice Gateway** is an enterprise-grade, multi-tenant, programmable API gateway and zero-trust access proxy built on [Pingora](https://github.com/cloudflare/pingora).  
+**Drizzle Gateway** is an enterprise-grade, multi-tenant, programmable API gateway and zero-trust access proxy built on [Pingora](https://github.com/cloudflare/pingora).  
 It is designed for extensibility, security, and observability from day one.
 
 ---
@@ -18,7 +18,7 @@ It is designed for extensibility, security, and observability from day one.
 
 ## 📂 Project Structure
 ```
-lattice/
+drizzle/
 ├── gateway/               # Data plane (fast path)
 │   ├── crates/
 │   │   ├── gateway-core   # Core proxy engine
@@ -55,9 +55,9 @@ lattice/
 ---
 
 ## 📘 Documentation
-- [Blueprint](Docs/blueprint.md) – high-level system architecture
-- [Tasks](Docs/tasks.md) – current sprint & milestones
-- [Decisions](Docs/decisions.md) – architectural decision log
+- [Blueprint](docs/devdoc/blueprint.md) – high-level system architecture
+- [Tasks](docs/devdoc/tasks.md) – current sprint & milestones
+- [Decisions](docs/devdoc/decisions.md) – architectural decision log
 
 ---
 
