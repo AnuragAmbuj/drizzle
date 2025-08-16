@@ -18,7 +18,7 @@ It is designed for extensibility, security, and observability from day one.
 
 ## 📂 Project Structure
 ```
-lattice/
+drizzle/
 ├── gateway/               # Data plane (fast path)
 │   ├── crates/
 │   │   ├── gateway-core   # Core proxy engine
