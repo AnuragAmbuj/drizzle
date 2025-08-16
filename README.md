@@ -55,9 +55,9 @@ lattice/
 ---
 
 ## 📘 Documentation
-- [Blueprint](docs/dev-doc/blueprint.md) – high-level system architecture
-- [Tasks](docs/dev-doc/tasks.md) – current sprint & milestones
-- [Decisions](docs/dev-doc/decisions.md) – architectural decision log
+- [Blueprint](docs/devdoc/blueprint.md) – high-level system architecture
+- [Tasks](docs/devdoc/tasks.md) – current sprint & milestones
+- [Decisions](docs/devdoc/decisions.md) – architectural decision log
 
 ---
 
