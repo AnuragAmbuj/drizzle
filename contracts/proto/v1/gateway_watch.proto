@@ -1,0 +1,5 @@
+syntax = "proto3";
+package contracts.v1;
+message Snapshot { bytes blob = 1; string version = 2; }
+message WatchRequest { string node_id = 1; string supported_schema = 2; }
+service Distributor { rpc Watch(WatchRequest) returns (stream Snapshot); }

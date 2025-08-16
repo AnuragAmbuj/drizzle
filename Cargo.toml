@@ -1,0 +1,45 @@
+[workspace]
+resolver = "2"
+members = [ "control-plane/crates/contracts", "control-plane/crates/domain", "control-plane/crates/events", "control-plane/crates/storage", "control-plane/services/admin-api", "control-plane/services/auditor", "control-plane/services/distributor", "control-plane/services/idp", "control-plane/services/secrets", "gateway/bin/gatewayd", "gateway/crates/authn", "gateway/crates/authz", "gateway/crates/commons","gateway/crates/core"
+  "gateway/crates/core",
+  "gateway/crates/proxy",
+  "gateway/crates/authn",
+  "gateway/crates/authz",
+  "gateway/crates/limits",
+  "gateway/crates/routing",
+  "gateway/crates/transforms",
+  "gateway/crates/observability",
+  "gateway/crates/snapshot",
+  "gateway/crates/plugin-sdk",
+  "gateway/crates/plugin-host",
+  "gateway/crates/tls",
+  "gateway/crates/errors",
+  "gateway/crates/commons",
+  "gateway/bin/gatewayd",
+  "control-plane/crates/domain",
+  "control-plane/crates/storage",
+  "control-plane/crates/events",
+  "control-plane/crates/contracts",
+  "control-plane/services/admin-api",
+  "control-plane/services/distributor",
+  "control-plane/services/idp",
+  "control-plane/services/secrets",
+  "control-plane/services/auditor",
+, "gateway/crates/errors", "gateway/crates/limits", "gateway/crates/observability", "gateway/crates/plugin-host", "gateway/crates/plugin-sdk", "gateway/crates/proxy", "gateway/crates/routing", "gateway/crates/snapshot", "gateway/crates/tls", "gateway/crates/transforms"]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+authors = ["Your Team <dev@example.com>"]
+
+[workspace.dependencies]
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+# pingora = "0.6"
+# wasmtime = "26"
+# opentelemetry = "0.25"

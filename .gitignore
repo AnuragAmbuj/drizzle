@@ -1,0 +1,12 @@
+/target
+**/target
+.DS_Store
+node_modules
+.env
+.env.*
+/console/.next
+.idea
+.vscode
+Cargo.members
+!.keep
+!README.md
