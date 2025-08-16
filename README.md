@@ -1,6 +1,6 @@
 # Drizzle Gateway by IronLattice Labs
 
-**IronLattice Gateway** is an enterprise-grade, multi-tenant, programmable API gateway and zero-trust access proxy built on [Pingora](https://github.com/cloudflare/pingora).  
+**Drizzle Gateway** is an enterprise-grade, multi-tenant, programmable API gateway and zero-trust access proxy built on [Pingora](https://github.com/cloudflare/pingora).  
 It is designed for extensibility, security, and observability from day one.
 
 ---
