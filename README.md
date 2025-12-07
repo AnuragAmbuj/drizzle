@@ -6,13 +6,10 @@ It is designed for extensibility, security, and observability from day one.
 ---
 
 ## 🚀 Features
-- Multi-tenant API gateway with programmable routing
-- Built-in **Zero Trust** access proxy (mTLS, AuthN, AuthZ)
-- Extensible plugin system (SDK + host runtime)
-- Test-driven & domain-driven design (DDD-first approach)
-- Observability with metrics, tracing, and logging
-- Control Plane with Admin API + CLI
-- Web-based Monitoring & Configuration UI
+- **Data Plane**: High-performance reverse proxy using Cloudflare's Pingora.
+- **Control Plane**: Centralized management with Postgres persistence.
+- **Dynamic Configuration**: Hot-reloading of routing rules via polling.
+- **Multi-Tenant**: Native support for multiple tenants and routes.
 
 ---
 
@@ -21,72 +18,87 @@ It is designed for extensibility, security, and observability from day one.
 drizzle/
 ├── gateway/               # Data plane (fast path)
 │   ├── crates/
-│   │   ├── gateway-core   # Core proxy engine
-│   │   ├── routing        # Routing rules
-│   │   ├── authn          # Authentication
-│   │   ├── authz          # Authorization
-│   │   ├── limits         # Rate limiting / quotas
-│   │   ├── observability  # Logs / metrics / tracing
-│   │   └── plugin-*       # Extensible plugins
+│   │   ├── proxy          # Core proxy engine + Poller
+│   │   └── snapshot       # Shared configuration format
 │   └── bin/
 │       └── gatewayd       # Gateway daemon
 │
 ├── control-plane/         # Management plane
 │   ├── crates/
 │   │   ├── domain         # DDD domain models
-│   │   ├── storage        # Persistence layer
-│   │   ├── contracts      # API contracts / schemas
-│   │   └── events         # Event-driven interactions
+│   │   └── storage        # Persistence (Postgres/sqlx)
+│   ├── services/
+│   │   └── admin-api      # REST Admin API
 │   └── bin/
-│       ├── admin-api      # REST/gRPC admin API
-│       ├── distributor    # Config distributor
-│       ├── idp            # Identity provider
-│       └── secrets        # Secrets manager
+│       └── admin-cli      # CLI Management Tool
 │
-├── ui/                    # Monitoring & Config UI
-│   └── dashboard/         # React/Next.js + ShadCN
-│
-└── Docs/                  # Documentation
-    ├── blueprint.md       # Full architectural blueprint
-    ├── tasks.md           # Task & milestone tracker
-    └── decisions.md       # ADR (decision log)
+└── scripts/               # Helper scripts
+    ├── init_db.sh         # Start Postgres & migrate
+    ├── run_admin.sh       # Run Admin API
+    ├── run_gateway.sh     # Run Gateway
+    └── verify_e2e.sh      # E2E health check
 ```
 
 ---
 
-## 📘 Documentation
-- [Blueprint](docs/devdoc/blueprint.md) – high-level system architecture
-- [Tasks](docs/devdoc/tasks.md) – current sprint & milestones
-- [Decisions](docs/devdoc/decisions.md) – architectural decision log
-
----
-
 ## 🛠️ Development
+
 ### Prerequisites
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable)
-- [Cargo](https://doc.rust-lang.org/cargo/)
-- [Make](https://www.gnu.org/software/make/) (for build/test helpers)
+- [Docker](https://www.docker.com/) (for Postgres database)
+- [sqlx-cli](https://github.com/launchbadge/sqlx) (optional, installed by init script)
 
-### Commands
+### Getting Started
+
+1. **Initialize Database**
+   Starts a Postgres container on port 5442 and runs migrations.
+   ```bash
+   ./scripts/init_db.sh
+   ```
+
+2. **Run Control Plane**
+   Starts the Admin API on port 3000.
+   ```bash
+   ./scripts/run_admin.sh
+   ```
+
+3. **Manage Configuration (CLI)**
+   Use the CLI to create tenants, services, and routes.
+   ```bash
+   cargo run -q -p admin-cli -- --help
+   ```
+
+4. **Run Data Plane**
+   Starts the Gateway on port 6188 (polls Admin API every 10s).
+   ```bash
+   ./scripts/run_gateway.sh
+   ```
+
+### Testing
+
 ```bash
-# Build everything
-make build
+# Run unit tests
+./scripts/test_domain.sh
+./scripts/test_snapshot.sh
 
-# Run tests
-make test
+# Run storage integration tests (requires DB up)
+cargo test -p storage
 
-# Run gateway daemon
-cargo run -p gatewayd
+# Verify E2E (requires Admin API & Gateway running)
+./scripts/verify_e2e.sh
 ```
 
 ---
 
 ## 🧭 Roadmap
-- [ ] MVP Data Plane (Pingora integration, basic routing)
-- [ ] Control Plane (Admin API, storage)
+- [x] MVP Data Plane (Pingora integration)
+- [x] Control Plane (Admin API, Postgres Persistence)
+- [x] Dynamic Configuration (Polling Distribution)
+- [x] Advanced Routing (Host/Path matching)
+- [x] Admin CLI
 - [ ] Zero Trust Layer (mTLS, policy enforcement)
 - [ ] Monitoring UI
-- [ ] Plugin Ecosystem
+- [ ] Monitoring UI
 
 ---
 

@@ -10,6 +10,7 @@ members = [
     "control-plane/services/distributor",
     "control-plane/services/idp",
     "control-plane/services/secrets",
+    "control-plane/bin/admin-cli",
     "gateway/bin/gatewayd",
     "gateway/crates/authn",
     "gateway/crates/authz",
@@ -64,6 +65,19 @@ serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-# pingora = "0.6"
+pingora = { version = "0.6", features = ["lb"] }
 # wasmtime = "26"
 # opentelemetry = "0.25"
+uuid = { version = "1.10", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+validator = { version = "0.18", features = ["derive"] }
+regex = "1.10"
+lazy_static = "1.4"
+sha2 = "0.10"
+base64 = "0.22"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+hex = "0.4"
+arc-swap = "1.7"
+axum = "0.7"
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros", "uuid", "chrono", "json"] }
+dotenvy = "0.15"

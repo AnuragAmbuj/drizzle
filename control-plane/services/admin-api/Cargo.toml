@@ -6,3 +6,15 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
+axum = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+domain = { path = "../../crates/domain" }
+snapshot = { path = "../../../gateway/crates/snapshot" }
+sqlx = { workspace = true }
+storage = { path = "../../crates/storage" }
+dotenvy = { workspace = true }
+env_logger = "0.11"

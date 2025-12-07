@@ -6,3 +6,14 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
+pingora = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+async-trait = "0.1"
+log = "0.4"
+arc-swap = { workspace = true }
+domain = { path = "../../../control-plane/crates/domain" }
+snapshot = { path = "../snapshot" }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+anyhow = { workspace = true }
+regex = { workspace = true }
+url = "2.5"
