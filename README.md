@@ -98,7 +98,6 @@ cargo test -p storage
 - [x] Admin CLI
 - [ ] Zero Trust Layer (mTLS, policy enforcement)
 - [ ] Monitoring UI
-- [ ] Monitoring UI
 
 ---
 

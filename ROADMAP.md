@@ -3,12 +3,12 @@
 ## M0 — Discovery & Domain Foundations
 **Goal:** Freeze requirements, define domain model, set contracts, and prepare the repo.
 
-- [ ] Finalize **functional requirements** (routing, authN/Z, limits, observability).
-- [ ] Define **SLIs/SLOs** (latency, availability, error budget).
-- [ ] Draft **bounded contexts, aggregates, events** (DDD).
-- [ ] Author ADRs: project structure, policy engine, limits, plugins, observability.
-- [ ] Scaffold monorepo + contracts folder structure.
-- [ ] Seed **failing domain tests** that capture rules.
+- [x] Finalize **functional requirements** (routing, authN/Z, limits, observability).
+- [x] Define **SLIs/SLOs** (latency, availability, error budget).
+- [x] Draft **bounded contexts, aggregates, events** (DDD).
+- [x] Author ADRs: project structure, policy engine, limits, plugins, observability.
+- [x] Scaffold monorepo + contracts folder structure.
+- [x] Seed **failing domain tests** that capture rules.
 
 ✅ *Deliverable:* Monorepo structure with contracts and ADRs in place; test skeletons defined.
 
@@ -17,12 +17,12 @@
 ## M1 — Control Plane Core
 **Goal:** CRUD + validation + versioned snapshot builder.
 
-- [ ] Implement **domain entities** (Tenant, Service, Route, Policy, LimitPolicy).
-- [ ] Define PostgreSQL schema & migrations.
-- [ ] Build **snapshot builder** (versioned JSON/Protobuf).
-- [ ] Expose **Admin API** (OpenAPI v1) for CRUD + validate + diff + publish.
+- [x] Implement **domain entities** (Tenant, Service, Route, Policy, LimitPolicy).
+- [x] Define PostgreSQL schema & migrations.
+- [x] Build **snapshot builder** (versioned JSON/Protobuf).
+- [x] Expose **Admin API** (OpenAPI v1) for CRUD + validate + diff + publish.
 - [ ] Add audit event recording.
-- [ ] Integration tests with Postgres (testcontainers).
+- [x] Integration tests with Postgres (testcontainers).
 
 ✅ *Deliverable:* Control plane API and snapshot service producing signed versioned configs.
 
@@ -31,12 +31,12 @@
 ## M2 — Data Plane MVP (Pingora)
 **Goal:** Basic HTTP proxy with config ingestion.
 
-- [ ] Stand up `gatewayd` with Pingora listener (H1/H2, TLS).
-- [ ] Support routing (host/path/method).
-- [ ] Ingest snapshot from control plane distributor.
+- [x] Stand up `gatewayd` with Pingora listener (H1/H2, TLS).
+- [x] Support routing (host/path/method).
+- [x] Ingest snapshot from control plane distributor.
 - [ ] Implement per-route timeouts & retries.
 - [ ] Add metrics (Prometheus), logs, and readiness probe.
-- [ ] E2E tests: route matching + upstream calls.
+- [x] E2E tests: route matching + upstream calls.
 
 ✅ *Deliverable:* Minimal programmable proxy configurable via control plane.
 
