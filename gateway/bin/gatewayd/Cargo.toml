@@ -11,7 +11,13 @@ pingora = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 env_logger = "0.11"
 log = "0.4"
+prometheus = "0.13"
 snapshot = { path = "../../crates/snapshot" }
 authn = { path = "../../crates/authn" }
 authz = { path = "../../crates/authz" }
 limits = { path = "../../crates/limits" }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["postgres"] }
+anyhow.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+dotenvy = { workspace = true }

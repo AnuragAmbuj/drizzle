@@ -8,7 +8,7 @@ authors.workspace = true
 [dependencies]
 pingora = { workspace = true, features = ["lb", "openssl"] }
 async-trait = "0.1"
-tokio = { version = "1", features = ["full"] }
+tokio = { workspace = true, features = ["full"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -24,3 +24,6 @@ domain = { path = "../../../control-plane/crates/domain" }
 authn = { path = "../authn" }
 authz = { path = "../authz" }
 limits = { path = "../limits" }
+prometheus = "0.13"
+lazy_static = "1.4"
+chrono.workspace = true

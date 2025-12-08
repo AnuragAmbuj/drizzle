@@ -25,7 +25,7 @@ members = [
     "gateway/crates/plugin-sdk",
     "gateway/crates/plugin-host",
     "gateway/crates/tls",
-    "gateway/crates/errors",
+    "gateway/crates/errors", "tooling/load-gen",
 ]
 
 [workspace.package]
@@ -55,5 +55,5 @@ ed25519-dalek = { version = "2", features = ["rand_core"] }
 hex = "0.4"
 arc-swap = "1.7"
 axum = "0.7"
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros", "uuid", "chrono", "json"] }
+sqlx = { version = "0.7", default-features = false, features = ["runtime-tokio", "tls-native-tls", "postgres", "sqlite", "macros", "uuid", "chrono", "migrate", "json"] }
 dotenvy = "0.15"

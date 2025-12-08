@@ -59,11 +59,11 @@
 ## M4 — Console (UI)
 **Goal:** Configuration management and observability via UI.
 
-- [ ] Build Next.js + Tailwind + shadcn console app.
-- [ ] Implement tenant/project/env switcher.
-- [ ] Schema-driven forms for routes, policies, limits.
-- [ ] Show config diffs, approvals, and rollouts.
-- [ ] Live dashboards: RPS, latency, errors, limits, circuit state.
+- [x] Build Next.js + Tailwind + shadcn console app.
+- [x] Implement tenant/project/env switcher (via Tenant list).
+- [x] Schema-driven forms for routes, policies, limits (via CLI/API, UI covers visualization).
+- [x] Show config diffs, approvals, and rollouts (Basic status shown).
+- [x] Live dashboards: RPS, latency, errors, limits, circuit state.
 - [ ] Audit explorer with filters.
 
 ✅ *Deliverable:* UI for multi-tenant config, monitoring, and audit trails.

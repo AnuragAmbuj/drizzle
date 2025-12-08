@@ -9,6 +9,11 @@ It is designed for extensibility, security, and observability from day one.
 - **Data Plane**: High-performance reverse proxy using Cloudflare's Pingora.
 - **Control Plane**: Centralized management with Postgres persistence.
 - **Dynamic Configuration**: Hot-reloading of routing rules via polling.
+- **Zero-Trust Security**:
+    - **Authentication**: API Key support.
+    - **Authorization**: Fine-grained policies via Cedar Policy Engine.
+    - **Rate Limiting**: Distributed Token Bucket algorithm.
+- **Observability**: Prometheus metrics, health probes, and structured logging.
 - **Multi-Tenant**: Native support for multiple tenants and routes.
 
 ---
@@ -74,6 +79,9 @@ drizzle/
    ./scripts/run_gateway.sh
    ```
 
+### Dashboard Layout
+![Dashboard](assets/dashboard_analytics.png)
+
 ### Testing
 
 ```bash
@@ -83,6 +91,9 @@ drizzle/
 
 # Run storage integration tests (requires DB up)
 cargo test -p storage
+
+# Verify Observability
+./scripts/test_observability.sh
 
 # Verify E2E (requires Admin API & Gateway running)
 ./scripts/verify_e2e.sh
@@ -96,8 +107,9 @@ cargo test -p storage
 - [x] Dynamic Configuration (Polling Distribution)
 - [x] Advanced Routing (Host/Path matching)
 - [x] Admin CLI
-- [ ] Zero Trust Layer (mTLS, policy enforcement)
-- [ ] Monitoring UI
+- [x] Zero Trust Layer (API Key, Cedar, Rate Limits)
+- [x] Observability (Metrics, Health, Logging)
+- [x] Console UI
 
 ---
 
