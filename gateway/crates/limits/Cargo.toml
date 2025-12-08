@@ -6,3 +6,8 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
+tokio = { workspace = true, features = ["sync", "time"] }
+async-trait = "0.1"
+anyhow = { workspace = true }
+dashmap = "5.5" # For concurrent in-memory storage
+domain = { path = "../../../control-plane/crates/domain" }

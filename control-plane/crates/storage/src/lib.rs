@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use domain::policy::{LimitPolicy, Policy};
 use domain::route::Route;
 use domain::service::Service;
 use domain::tenant::Tenant;
@@ -212,5 +213,193 @@ impl RouteRepository for PgRouteRepository {
             .collect::<anyhow::Result<Vec<Route>>>()?;
 
         Ok(routes)
+    }
+}
+#[async_trait]
+pub trait ApiKeyRepository: Send + Sync {
+    async fn create(
+        &self,
+        id: uuid::Uuid,
+        key_value: &str,
+        tenant_id: uuid::Uuid,
+    ) -> anyhow::Result<()>;
+    /// Returns (Key, TenantID) tuples
+    async fn get_all(&self) -> anyhow::Result<Vec<(String, String)>>;
+}
+
+pub struct PgApiKeyRepository {
+    pool: PgPool,
+}
+
+impl PgApiKeyRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl ApiKeyRepository for PgApiKeyRepository {
+    async fn create(
+        &self,
+        id: uuid::Uuid,
+        key_value: &str,
+        tenant_id: uuid::Uuid,
+    ) -> anyhow::Result<()> {
+        let now = chrono::Utc::now();
+        sqlx::query!(
+            r#"
+            INSERT INTO api_keys (id, key_value, tenant_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+            id,
+            key_value,
+            tenant_id,
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_all(&self) -> anyhow::Result<Vec<(String, String)>> {
+        let recs = sqlx::query!(
+            r#"
+            SELECT key_value, tenant_id
+            FROM api_keys
+            WHERE deleted_at IS NULL
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        // Map Tenant UUID to String for the Snapshot logic
+        Ok(recs
+            .into_iter()
+            .map(|r| (r.key_value, r.tenant_id.to_string()))
+            .collect())
+    }
+}
+
+#[async_trait]
+pub trait PolicyRepository: Send + Sync {
+    async fn create(&self, policy: &Policy) -> anyhow::Result<()>;
+    async fn get_all(&self) -> anyhow::Result<Vec<Policy>>;
+}
+
+pub struct PgPolicyRepository {
+    pool: PgPool,
+}
+
+impl PgPolicyRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl PolicyRepository for PgPolicyRepository {
+    async fn create(&self, policy: &Policy) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            INSERT INTO policies (id, tenant_id, name, content, created_at, updated_at, deleted_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            policy.id,
+            policy.tenant_id,
+            policy.name,
+            policy.content,
+            policy.created_at,
+            policy.updated_at,
+            policy.deleted_at
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_all(&self) -> anyhow::Result<Vec<Policy>> {
+        let recs = sqlx::query!(
+            r#"
+            SELECT id, tenant_id, name, content, created_at, updated_at, deleted_at
+            FROM policies
+            WHERE deleted_at IS NULL
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let policies = recs
+            .into_iter()
+            .map(|r| Policy {
+                id: r.id,
+                tenant_id: r.tenant_id.unwrap_or_default(), // Should handle nullable properly but domain struct expects Uuid. For MVP assume not null or default.
+                name: r.name,
+                content: r.content,
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+                deleted_at: r.deleted_at,
+            })
+            .collect();
+        Ok(policies)
+    }
+}
+
+#[async_trait]
+pub trait LimitPolicyRepository: Send + Sync {
+    async fn create(&self, policy: &LimitPolicy) -> anyhow::Result<()>;
+    async fn get_all(&self) -> anyhow::Result<Vec<LimitPolicy>>;
+}
+
+pub struct PgLimitPolicyRepository {
+    pool: PgPool,
+}
+
+impl PgLimitPolicyRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl LimitPolicyRepository for PgLimitPolicyRepository {
+    async fn create(&self, policy: &LimitPolicy) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            INSERT INTO limit_policies (id, tenant_id, name, rate, burst)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+            policy.id,
+            policy.tenant_id,
+            policy.name,
+            policy.rate as i32,
+            policy.burst as i32
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_all(&self) -> anyhow::Result<Vec<LimitPolicy>> {
+        let recs = sqlx::query!(
+            r#"
+            SELECT id, tenant_id, name, rate, burst
+            FROM limit_policies
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let policies = recs
+            .into_iter()
+            .map(|r| LimitPolicy {
+                id: r.id,
+                tenant_id: r.tenant_id.unwrap_or_default(),
+                name: r.name,
+                rate: r.rate as u32,
+                burst: r.burst as u32,
+            })
+            .collect();
+        Ok(policies)
     }
 }

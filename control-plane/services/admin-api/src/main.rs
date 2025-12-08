@@ -1,8 +1,10 @@
 use axum::{
     extract::{Json, State},
+    http::StatusCode,
     routing::{get, post},
     Router,
 };
+use domain::policy::Policy;
 use domain::route::{PathMatch, Route};
 use domain::service::Service;
 use domain::tenant::Tenant;
@@ -13,8 +15,9 @@ use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use storage::{
-    PgRouteRepository, PgServiceRepository, PgTenantRepository, RouteRepository, ServiceRepository,
-    TenantRepository,
+    ApiKeyRepository, LimitPolicyRepository, PgApiKeyRepository, PgLimitPolicyRepository,
+    PgPolicyRepository, PgRouteRepository, PgServiceRepository, PgTenantRepository,
+    PolicyRepository, RouteRepository, ServiceRepository, TenantRepository,
 };
 use uuid::Uuid;
 
@@ -23,6 +26,9 @@ struct AppState {
     tenant_repo: Arc<PgTenantRepository>,
     service_repo: Arc<PgServiceRepository>,
     route_repo: Arc<PgRouteRepository>,
+    policy_repo: Arc<PgPolicyRepository>,
+    limit_policy_repo: Arc<PgLimitPolicyRepository>,
+    api_key_repo: Arc<PgApiKeyRepository>,
 }
 
 #[tokio::main]
@@ -40,12 +46,18 @@ async fn main() {
 
     let tenant_repo = Arc::new(PgTenantRepository::new(pool.clone()));
     let service_repo = Arc::new(PgServiceRepository::new(pool.clone()));
-    let route_repo = Arc::new(PgRouteRepository::new(pool)); // Last use of pool
+    let route_repo = Arc::new(PgRouteRepository::new(pool.clone()));
+    let policy_repo = Arc::new(PgPolicyRepository::new(pool.clone()));
+    let limit_policy_repo = Arc::new(PgLimitPolicyRepository::new(pool.clone()));
+    let api_key_repo = Arc::new(PgApiKeyRepository::new(pool)); // Last use of pool
 
     let state = AppState {
         tenant_repo,
         service_repo,
         route_repo,
+        policy_repo,
+        limit_policy_repo,
+        api_key_repo,
     };
 
     // build our application with a route
@@ -54,6 +66,9 @@ async fn main() {
         .route("/tenants", post(create_tenant))
         .route("/services", post(create_service))
         .route("/routes", post(create_route))
+        .route("/policies", post(create_policy))
+        .route("/limits", post(create_limit_policy))
+        .route("/api-keys", post(create_api_key))
         .route("/snapshot", get(get_snapshot))
         .with_state(state);
 
@@ -122,19 +137,30 @@ async fn create_route(
     }
 }
 
-async fn get_snapshot(State(state): State<AppState>) -> Json<Snapshot> {
+async fn get_snapshot(
+    State(state): State<AppState>,
+) -> Result<Json<Snapshot>, (StatusCode, String)> {
     // Fetch all data in parallel (could use join!, but sequential await is fine for MVP)
     let tenants = state.tenant_repo.get_all().await.unwrap_or_default();
     let services = state.service_repo.get_all().await.unwrap_or_default();
     let routes = state.route_repo.get_all().await.unwrap_or_default();
+    let policies = state.policy_repo.get_all().await.unwrap_or_default();
+    let limits = state.limit_policy_repo.get_all().await.unwrap_or_default();
+    let api_keys_list = state.api_key_repo.get_all().await.unwrap_or_default();
 
-    let builder = SnapshotBuilder::new("v1".to_string(), "admin-api".to_string())
+    let api_keys: std::collections::HashMap<String, String> = api_keys_list.into_iter().collect();
+
+    let version = "v1".to_string(); // Defined version for the builder
+    let snapshot = SnapshotBuilder::new(version, "admin-api".to_string())
         .with_tenants(tenants)
         .with_services(services)
-        .with_routes(routes);
-
-    let snapshot = builder.build().unwrap();
-    Json(snapshot)
+        .with_routes(routes)
+        .with_policies(policies)
+        .with_limits(limits)
+        .with_api_keys(api_keys)
+        .build()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(snapshot))
 }
 
 #[derive(serde::Deserialize)]
@@ -155,4 +181,75 @@ struct CreateRouteRequest {
     service_id: Uuid,
     name: String,
     path: String,
+}
+
+use domain::policy::LimitPolicy;
+
+async fn create_limit_policy(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateLimitPolicyRequest>,
+) -> Json<serde_json::Value> {
+    let policy = LimitPolicy::new(payload.tenant_id, payload.name, payload.rate, payload.burst);
+
+    match state.limit_policy_repo.create(&policy).await {
+        Ok(_) => Json(json!(policy)),
+        Err(e) => {
+            eprintln!("Failed to create limit policy: {:?}", e);
+            Json(json!({ "error": "Failed to create limit policy" }))
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct CreateLimitPolicyRequest {
+    tenant_id: Uuid,
+    name: String,
+    rate: u32,
+    burst: u32,
+}
+
+async fn create_policy(
+    State(state): State<AppState>,
+    Json(payload): Json<CreatePolicyRequest>,
+) -> Json<serde_json::Value> {
+    let policy = Policy::new(payload.tenant_id, payload.name, payload.content);
+
+    match state.policy_repo.create(&policy).await {
+        Ok(_) => Json(json!(policy)),
+        Err(e) => {
+            eprintln!("Failed to create policy: {:?}", e);
+            Json(json!({ "error": "Failed to create policy" }))
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct CreatePolicyRequest {
+    tenant_id: Uuid,
+    name: String,
+    content: String,
+}
+
+async fn create_api_key(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateApiKeyRequest>,
+) -> Json<serde_json::Value> {
+    let id = Uuid::new_v4();
+    match state
+        .api_key_repo
+        .create(id, &payload.key, payload.tenant_id)
+        .await
+    {
+        Ok(_) => Json(json!({ "id": id, "key": payload.key, "tenant_id": payload.tenant_id })),
+        Err(e) => {
+            eprintln!("Failed to create API key: {:?}", e);
+            Json(json!({ "error": "Failed to create API key" }))
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct CreateApiKeyRequest {
+    tenant_id: Uuid,
+    key: String,
 }

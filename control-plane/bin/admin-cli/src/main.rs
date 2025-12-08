@@ -22,6 +22,8 @@ enum Commands {
     Service(ServiceArgs),
     /// Manage Routes
     Route(RouteArgs),
+    /// Manage API Keys
+    ApiKey(ApiKeyArgs),
 }
 
 #[derive(Args)]
@@ -79,6 +81,23 @@ enum RouteCommands {
     },
 }
 
+#[derive(Args)]
+struct ApiKeyArgs {
+    #[command(subcommand)]
+    command: ApiKeyCommands,
+}
+
+#[derive(Subcommand)]
+enum ApiKeyCommands {
+    /// Create a new API key
+    Create {
+        #[arg(long)]
+        tenant_id: Uuid,
+        #[arg(long)]
+        key: String,
+    },
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -132,6 +151,20 @@ async fn main() -> Result<()> {
                         "service_id": service_id,
                         "name": name,
                         "path": path
+                    }))
+                    .send()
+                    .await?;
+                print_response(res).await?;
+            }
+        }, // Added missing closing brace and comma here
+        Commands::ApiKey(args) => match &args.command {
+            ApiKeyCommands::Create { tenant_id, key } => {
+                let url = format!("{}/api-keys", cli.url);
+                let res = client
+                    .post(&url)
+                    .json(&serde_json::json!({
+                        "tenant_id": tenant_id,
+                        "key": key
                     }))
                     .send()
                     .await?;

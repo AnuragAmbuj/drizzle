@@ -6,14 +6,21 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
-pingora = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+pingora = { workspace = true, features = ["lb", "openssl"] }
 async-trait = "0.1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+arc-swap = "1.7"
 log = "0.4"
-arc-swap = { workspace = true }
-domain = { path = "../../../control-plane/crates/domain" }
-snapshot = { path = "../snapshot" }
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-anyhow = { workspace = true }
+http = "1.0"
 regex = { workspace = true }
 url = "2.5"
+anyhow = "1.0"
+
+snapshot = { path = "../snapshot" }
+domain = { path = "../../../control-plane/crates/domain" }
+authn = { path = "../authn" }
+authz = { path = "../authz" }
+limits = { path = "../limits" }

@@ -47,7 +47,12 @@ impl SnapshotBuilder {
         self
     }
 
-    /// Finalizes the snapshot by calculating hash and "signing" it.
+    pub fn with_api_keys(mut self, api_keys: std::collections::HashMap<String, String>) -> Self {
+        self.snapshot.api_keys = api_keys;
+        self
+    }
+
+    /// Finalizes the snapshot by calling hash and "signing" it.
     /// In a real system, you'd pass a KeyPair here.
     pub fn build(mut self) -> anyhow::Result<Snapshot> {
         // 1. Calculate SHA256 of the data content
@@ -61,6 +66,7 @@ impl SnapshotBuilder {
             &self.snapshot.routes,
             &self.snapshot.policies,
             &self.snapshot.limit_policies,
+            &self.snapshot.api_keys,
         );
         let canonical_json = serde_json::to_string(&data_tuple)?;
 

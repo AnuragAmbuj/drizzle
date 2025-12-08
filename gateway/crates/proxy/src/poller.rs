@@ -5,18 +5,26 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
+use authz::CedarPolicyEnforcer;
+
 pub struct SnapshotPoller {
     client: reqwest::Client,
     admin_url: String,
     manager: Arc<SnapshotManager>,
+    authz: Arc<CedarPolicyEnforcer>,
 }
 
 impl SnapshotPoller {
-    pub fn new(admin_url: String, manager: Arc<SnapshotManager>) -> Self {
+    pub fn new(
+        admin_url: String,
+        manager: Arc<SnapshotManager>,
+        authz: Arc<CedarPolicyEnforcer>,
+    ) -> Self {
         Self {
             client: reqwest::Client::new(),
             admin_url,
             manager,
+            authz,
         }
     }
 
@@ -32,7 +40,8 @@ impl SnapshotPoller {
                             "Updated snapshot from {} to {}",
                             current_version, snapshot.version
                         );
-                        self.manager.update(snapshot);
+                        self.manager.update(snapshot.clone());
+                        self.authz.update_policies(&snapshot.policies);
                     } else {
                         // For MVP admin-api generates new version every time,
                         // but if we had stability checks we'd log debug here.
@@ -40,7 +49,8 @@ impl SnapshotPoller {
 
                         // Because our MVP Admin API is stateless/random generation for now,
                         // we just blindly update to prove the pipes work.
-                        self.manager.update(snapshot);
+                        self.manager.update(snapshot.clone());
+                        self.authz.update_policies(&snapshot.policies);
                     }
                 }
                 Err(e) => {

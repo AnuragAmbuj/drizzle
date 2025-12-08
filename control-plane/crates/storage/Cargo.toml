@@ -12,6 +12,7 @@ uuid = { workspace = true }
 async-trait = "0.1"
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+chrono = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }

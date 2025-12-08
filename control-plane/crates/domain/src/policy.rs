@@ -31,6 +31,18 @@ pub struct LimitPolicy {
     pub burst: u32,
 }
 
+impl LimitPolicy {
+    pub fn new(tenant_id: Uuid, name: String, rate: u32, burst: u32) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            tenant_id,
+            name,
+            rate,
+            burst,
+        }
+    }
+}
+
 impl Policy {
     pub fn new(tenant_id: Uuid, name: String, content: String) -> Self {
         Self {

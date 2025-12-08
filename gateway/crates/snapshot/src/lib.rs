@@ -8,6 +8,7 @@ use domain::{
 use serde::{Deserialize, Serialize};
 
 pub mod builder;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -26,6 +27,10 @@ pub struct Snapshot {
     pub routes: Vec<Route>,
     pub policies: Vec<Policy>,
     pub limit_policies: Vec<LimitPolicy>,
+
+    /// API Keys: Key -> Identity Subject (Tenant ID or User ID)
+    #[serde(default)]
+    pub api_keys: HashMap<String, String>,
 
     // --- Metadata ---
     pub metadata: SnapshotMetadata,
@@ -49,6 +54,7 @@ impl Default for Snapshot {
             routes: vec![],
             policies: vec![],
             limit_policies: vec![],
+            api_keys: HashMap::new(),
             metadata: SnapshotMetadata {
                 issuer: "unknown".to_string(),
                 issued_at: Utc::now(),

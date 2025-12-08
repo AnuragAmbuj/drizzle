@@ -17,8 +17,12 @@ fn main() {
     let initial_snapshot = Snapshot::default();
     let manager = Arc::new(SnapshotManager::new(initial_snapshot));
 
+    use authz::CedarPolicyEnforcer;
+    let authz_enforcer = Arc::new(CedarPolicyEnforcer::new());
+
     // 3. Start Poller in a separate thread
     let poller_manager = manager.clone();
+    let poller_manager_authz = authz_enforcer.clone();
     let admin_url =
         std::env::var("ADMIN_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -28,7 +32,8 @@ fn main() {
             .build()
             .unwrap();
 
-        let poller = proxy::poller::SnapshotPoller::new(admin_url, poller_manager);
+        let poller_authz = poller_manager_authz.clone();
+        let poller = proxy::poller::SnapshotPoller::new(admin_url, poller_manager, poller_authz);
 
         runtime.block_on(async {
             // Poll every 10 seconds
@@ -36,9 +41,17 @@ fn main() {
         });
     });
 
-    // 4. create the proxy service
-    let mut my_proxy =
-        pingora::proxy::http_proxy_service(&server.configuration, GatewayProxy { manager });
+    use limits::TokenBucketRateLimiter;
+    let rate_limiter = Arc::new(TokenBucketRateLimiter::new());
+
+    let mut my_proxy = pingora::proxy::http_proxy_service(
+        &server.configuration,
+        GatewayProxy {
+            manager,
+            authz: authz_enforcer.clone(),
+            limits: rate_limiter.clone(),
+        },
+    );
 
     // 5. Configure listener
     my_proxy.add_tcp("0.0.0.0:6188");

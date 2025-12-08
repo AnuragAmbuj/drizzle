@@ -6,3 +6,13 @@ license.workspace = true
 authors.workspace = true
 
 [dependencies]
+cedar-policy = "3.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+async-trait = "0.1"
+thiserror = "1.0"
+authn = { path = "../authn" }
+pingora = { workspace = true }
+arc-swap = "1.7"
+domain = { path = "../../../control-plane/crates/domain" }

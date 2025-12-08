@@ -1,8 +1,18 @@
 [package]
 name = "authn"
 version = "0.1.0"
-edition.workspace = true
-license.workspace = true
-authors.workspace = true
+edition = "2021"
 
 [dependencies]
+async-trait = "0.1"
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+pingora = { workspace = true, features = ["lb"] } 
+# We need pingora just for RequestHeader types if we want to be strict, 
+# or we can just use generic http types.
+# Actually pingora uses http crate types mostly.
+http = "1.0"
+schemars = "0.8"
+
+# Future: jsonwebtoken = "9.2"
