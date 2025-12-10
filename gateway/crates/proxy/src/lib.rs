@@ -1,6 +1,7 @@
 use crate::router::Router;
 use async_trait::async_trait;
 use authn::Identity;
+use domain;
 use http::header::HeaderValue;
 use pingora::prelude::*;
 use pingora::proxy::{ProxyHttp, Session};
@@ -44,6 +45,40 @@ impl ProxyHttp for GatewayProxy {
     }
 
     async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
+        // 0. DoS Protection: IP Rate Limiting
+        let client_ip = session
+            .client_addr()
+            .map(|addr| addr.to_string())
+            .unwrap_or_else(|| "unknown".to_string());
+
+        // Use dynamic policy from snapshot
+        let snapshot = self.manager.get();
+        let security_config = &snapshot.security;
+
+        let ip_policy = domain::policy::LimitPolicy {
+            id: uuid::Uuid::nil(), // Placeholder for global policy
+            tenant_id: uuid::Uuid::nil(),
+            name: "ip-protection".to_string(),
+            rate: security_config.global_rate_limit,
+            burst: security_config.global_burst,
+        };
+
+        let limit_key = format!("ip:{}", client_ip);
+        let allowed = self
+            .limits
+            .check(&limit_key, &ip_policy)
+            .await
+            .map_err(|e| {
+                pingora::Error::explain(pingora::ErrorType::InternalError, e.to_string())
+            })?;
+
+        if !allowed {
+            // Log attack attempt?
+            // For now just 429
+            session.respond_error(429).await?;
+            return Ok(true);
+        }
+
         // 1. Get Snapshot
         let snapshot = self.manager.get();
 
@@ -134,7 +169,7 @@ impl ProxyHttp for GatewayProxy {
         let url = url::Url::parse(&upstream_url).map_err(|e| {
             pingora::Error::explain(pingora::ErrorType::InternalError, e.to_string())
         })?;
-        let peer = Box::new(HttpPeer::new(
+        let mut peer = Box::new(HttpPeer::new(
             (
                 url.host_str().unwrap_or("localhost"),
                 url.port_or_known_default().unwrap_or(80),
@@ -142,6 +177,12 @@ impl ProxyHttp for GatewayProxy {
             url.scheme() == "https",
             url.host_str().unwrap_or("localhost").to_string(),
         ));
+
+        // DoS Protection: Timeouts
+        peer.options.connection_timeout = Some(std::time::Duration::from_secs(3));
+        peer.options.read_timeout = Some(std::time::Duration::from_secs(5));
+        peer.options.write_timeout = Some(std::time::Duration::from_secs(5));
+
         Ok(peer)
     }
 
@@ -172,6 +213,11 @@ impl ProxyHttp for GatewayProxy {
             .observe(duration);
 
         if let Some(tx) = &self.analytics_tx {
+            let client_ip = session
+                .client_addr()
+                .map(|addr| addr.to_string())
+                .unwrap_or_else(|| "unknown".to_string());
+
             let entry = observability::RecentRequest {
                 timestamp: chrono::Utc::now(),
                 method,
@@ -179,6 +225,7 @@ impl ProxyHttp for GatewayProxy {
                 status,
                 duration_ms: duration * 1000.0,
                 tenant_id,
+                client_ip,
             };
             let _ = tx.send(entry);
         }

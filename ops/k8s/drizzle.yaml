@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: drizzle
+---
+# Postgres (Dev only)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: drizzle
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "drizzle"
+        ports:
+        - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: drizzle
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+---
+# Admin API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drizzle-admin
+  namespace: drizzle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drizzle-admin
+  template:
+    metadata:
+      labels:
+        app: drizzle-admin
+    spec:
+      containers:
+      - name: admin-api
+        image: drizzle-admin:latest # Local build
+        imagePullPolicy: Never
+        env:
+        - name: DATABASE_URL
+          value: "postgres://postgres:postgres@postgres:5432/drizzle"
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drizzle-admin
+  namespace: drizzle
+spec:
+  selector:
+    app: drizzle-admin
+  ports:
+  - port: 3000
+---
+# Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drizzle-gateway
+  namespace: drizzle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drizzle-gateway
+  template:
+    metadata:
+      labels:
+        app: drizzle-gateway
+    spec:
+      containers:
+      - name: gatewayd
+        image: drizzle-gateway:latest # Local build
+        imagePullPolicy: Never
+        env:
+        - name: ADMIN_URL
+          value: "http://drizzle-admin:3000"
+        - name: DATABASE_URL
+          value: "postgres://postgres:postgres@postgres:5432/drizzle"
+        ports:
+        - containerPort: 6188
+        - containerPort: 9111
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drizzle-gateway
+  namespace: drizzle
+spec:
+  selector:
+    app: drizzle-gateway
+  ports:
+  - name: proxy
+    port: 6188
+  - name: admin
+    port: 9111
+---
+# Console
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drizzle-console
+  namespace: drizzle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drizzle-console
+  template:
+    metadata:
+      labels:
+        app: drizzle-console
+    spec:
+      containers:
+      - name: console
+        image: drizzle-console:latest # Local build
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drizzle-console
+  namespace: drizzle
+spec:
+  type: LoadBalancer # Or NodePort
+  selector:
+    app: drizzle-console
+  ports:
+  - port: 80
+    targetPort: 80

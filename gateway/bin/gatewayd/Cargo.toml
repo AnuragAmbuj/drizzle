@@ -21,3 +21,5 @@ sqlx = { workspace = true, features = ["postgres"] }
 anyhow.workspace = true
 chrono = { workspace = true, features = ["serde"] }
 dotenvy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }

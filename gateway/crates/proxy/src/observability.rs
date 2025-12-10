@@ -11,6 +11,7 @@ pub struct RecentRequest {
     pub status: u16,
     pub duration_ms: f64,
     pub tenant_id: String,
+    pub client_ip: String,
 }
 
 pub type RequestRingBuffer = Arc<RwLock<VecDeque<RecentRequest>>>;

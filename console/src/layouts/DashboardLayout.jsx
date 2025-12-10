@@ -1,7 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Server, Shield, Activity } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Server, Shield, Activity, Terminal, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, href }) => {
     const location = useLocation();
@@ -25,6 +26,8 @@ const SidebarItem = ({ icon: Icon, label, href }) => {
 
 export default function DashboardLayout({ children }) {
     const [health, setHealth] = useState("Checking...");
+    const { logout, user } = useAuth();
+    const navigate = useNavigate();
 
     // Poll for health status
     useEffect(() => {
@@ -43,10 +46,16 @@ export default function DashboardLayout({ children }) {
         return () => clearInterval(interval);
     }, []);
 
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
     return (
         <div className="flex h-screen bg-background text-foreground overflow-hidden">
             {/* Sidebar */}
             <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-xl hidden md:flex flex-col">
+                {/* Header: Logo */}
                 <div className="h-16 flex items-center px-6 border-b border-border">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-primary rounded-md flex items-center justify-center">
@@ -56,14 +65,29 @@ export default function DashboardLayout({ children }) {
                     </div>
                 </div>
 
-                <div className="flex-1 px-4 py-6 space-y-1">
+                {/* User Info (Below Logo) */}
+                <div className="px-4 pt-4 pb-2">
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/10 border border-border/50">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary font-bold">
+                            {(user?.sub || 'U')[0].toUpperCase()}
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                            <span className="font-semibold text-sm leading-none truncate">{user?.sub || 'Guest'}</span>
+                            <span className="text-xs text-muted-foreground truncate">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 px-4 py-2 space-y-1">
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" href="/" />
                     <SidebarItem icon={Users} label="Tenants" href="/tenants" />
                     <SidebarItem icon={Server} label="Services" href="/services" />
                     <SidebarItem icon={Shield} label="Policies" href="/policies" />
+                    <SidebarItem icon={Terminal} label="Live Logs" href="/logs" />
                 </div>
 
-                <div className="p-4 border-t border-border">
+                {/* Footer: Gateway Status & Logout */}
+                <div className="p-4 border-t border-border space-y-4">
                     <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/20 border border-border/50">
                         <Activity className={cn("w-4 h-4", health === "Online" ? "text-green-500" : "text-red-500")} />
                         <div className="flex flex-col">
@@ -71,6 +95,11 @@ export default function DashboardLayout({ children }) {
                             <span className="text-sm font-semibold">{health}</span>
                         </div>
                     </div>
+
+                    <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors text-sm font-medium">
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                    </button>
                 </div>
             </aside>
 

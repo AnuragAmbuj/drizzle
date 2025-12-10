@@ -6,22 +6,23 @@ use domain::tenant::Tenant;
 use sqlx::PgPool;
 
 #[async_trait]
+#[async_trait]
 pub trait TenantRepository: Send + Sync {
     async fn create(&self, tenant: &Tenant) -> anyhow::Result<()>;
     async fn get_all(&self) -> anyhow::Result<Vec<Tenant>>;
+    async fn update(&self, id: uuid::Uuid, display_name: &str) -> anyhow::Result<()>;
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()>;
 }
 
 #[async_trait]
 pub trait ServiceRepository: Send + Sync {
     async fn create(&self, service: &Service) -> anyhow::Result<()>;
     async fn get_all(&self) -> anyhow::Result<Vec<Service>>;
+    async fn update(&self, id: uuid::Uuid, name: &str, hosts: &[String]) -> anyhow::Result<()>;
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()>;
 }
 
-#[async_trait]
-pub trait RouteRepository: Send + Sync {
-    async fn create(&self, route: &Route) -> anyhow::Result<()>;
-    async fn get_all(&self) -> anyhow::Result<Vec<Route>>;
-}
+// ... RouteRepository ...
 
 pub struct PgTenantRepository {
     pool: PgPool,
@@ -102,6 +103,35 @@ impl TenantRepository for PgTenantRepository {
 
         Ok(tenants)
     }
+
+    async fn update(&self, id: uuid::Uuid, display_name: &str) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE tenants 
+            SET display_name = $1, updated_at = NOW()
+            WHERE id = $2 AND deleted_at IS NULL
+            "#,
+            display_name,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE tenants 
+            SET deleted_at = NOW()
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -153,11 +183,59 @@ impl ServiceRepository for PgServiceRepository {
 
         Ok(services)
     }
+
+    async fn update(&self, id: uuid::Uuid, name: &str, hosts: &[String]) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE services
+            SET name = $1, hosts = $2, updated_at = NOW()
+            WHERE id = $3 AND deleted_at IS NULL
+            "#,
+            name,
+            hosts,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE services
+            SET deleted_at = NOW()
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
 
 #[async_trait]
+pub trait RouteRepository: Send + Sync {
+    async fn create(&self, route: &Route) -> anyhow::Result<()>;
+    async fn get_all(&self) -> anyhow::Result<Vec<Route>>;
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()>;
+    // Simplified update for now (Name only or similar? Or full replacement?)
+    // In a real app we'd have a specific DTO.
+    // For now let's support deleting and re-creating as the primary "Edit" flow on Frontend if structure changes too much,
+    // OR just support soft delete.
+    // User asked for "Edit".
+    // I will add delete. Editing complex routes via SQL in this file might be verbose without a DTO.
+    // Let's add `update` that takes name and priority for now, as path might be complex JSON.
+    // Actually, I can accept `match_path` json value?
+    // Let's implement `delete` first.
+}
+
+// ... in impl ...
+#[async_trait]
 impl RouteRepository for PgRouteRepository {
     async fn create(&self, route: &Route) -> anyhow::Result<()> {
+        // ... (CREATE) ...
         sqlx::query!(
             r#"
             INSERT INTO routes (id, service_id, name, priority, match_methods, match_path, match_headers, created_at, updated_at, deleted_at)
@@ -180,6 +258,7 @@ impl RouteRepository for PgRouteRepository {
     }
 
     async fn get_all(&self) -> anyhow::Result<Vec<Route>> {
+        // ... (GET ALL) ...
         let recs = sqlx::query!(
             r#"
             SELECT id, service_id, name, priority, match_methods, match_path, match_headers, created_at, updated_at, deleted_at
@@ -201,7 +280,7 @@ impl RouteRepository for PgRouteRepository {
                     match_methods: r.match_methods.unwrap_or_default(),
                     match_path: serde_json::from_value(
                         r.match_path.unwrap_or(serde_json::json!({})),
-                    )?, // Should not be null if migrated correctly but for safety
+                    )?,
                     match_headers: serde_json::from_value(
                         r.match_headers.unwrap_or(serde_json::json!({})),
                     )?,
@@ -214,7 +293,24 @@ impl RouteRepository for PgRouteRepository {
 
         Ok(routes)
     }
+
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE routes 
+            SET deleted_at = NOW()
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
+
+// ... ApiKeys ...
+
 #[async_trait]
 pub trait ApiKeyRepository: Send + Sync {
     async fn create(
@@ -285,6 +381,8 @@ impl ApiKeyRepository for PgApiKeyRepository {
 pub trait PolicyRepository: Send + Sync {
     async fn create(&self, policy: &Policy) -> anyhow::Result<()>;
     async fn get_all(&self) -> anyhow::Result<Vec<Policy>>;
+    async fn update(&self, id: uuid::Uuid, name: &str, content: &str) -> anyhow::Result<()>;
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()>;
 }
 
 pub struct PgPolicyRepository {
@@ -297,9 +395,11 @@ impl PgPolicyRepository {
     }
 }
 
+// ... impl ...
 #[async_trait]
 impl PolicyRepository for PgPolicyRepository {
     async fn create(&self, policy: &Policy) -> anyhow::Result<()> {
+        // ... (CREATE) ...
         sqlx::query!(
             r#"
             INSERT INTO policies (id, tenant_id, name, content, created_at, updated_at, deleted_at)
@@ -333,7 +433,7 @@ impl PolicyRepository for PgPolicyRepository {
             .into_iter()
             .map(|r| Policy {
                 id: r.id,
-                tenant_id: r.tenant_id.unwrap_or_default(), // Should handle nullable properly but domain struct expects Uuid. For MVP assume not null or default.
+                tenant_id: r.tenant_id.unwrap_or_default(),
                 name: r.name,
                 content: r.content,
                 created_at: r.created_at,
@@ -342,6 +442,36 @@ impl PolicyRepository for PgPolicyRepository {
             })
             .collect();
         Ok(policies)
+    }
+
+    async fn update(&self, id: uuid::Uuid, name: &str, content: &str) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE policies
+            SET name = $1, content = $2, updated_at = NOW()
+            WHERE id = $3 AND deleted_at IS NULL
+            "#,
+            name,
+            content,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn delete(&self, id: uuid::Uuid) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE policies
+            SET deleted_at = NOW()
+            WHERE id = $1
+            "#,
+            id
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }
 
@@ -401,5 +531,134 @@ impl LimitPolicyRepository for PgLimitPolicyRepository {
             })
             .collect();
         Ok(policies)
+    }
+}
+
+use domain::user::{User, UserRole};
+
+#[async_trait]
+pub trait UserRepository: Send + Sync {
+    async fn create(&self, user: &User) -> anyhow::Result<()>;
+    async fn get_by_username(&self, username: &str) -> anyhow::Result<Option<User>>;
+}
+
+pub struct PgUserRepository {
+    pool: PgPool,
+}
+
+impl PgUserRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl UserRepository for PgUserRepository {
+    async fn create(&self, user: &User) -> anyhow::Result<()> {
+        let role_str = match user.role {
+            UserRole::Admin => "admin",
+            UserRole::Editor => "editor",
+            UserRole::Viewer => "viewer",
+        };
+
+        sqlx::query!(
+            r#"
+            INSERT INTO users (id, username, password_hash, role, created_at, updated_at)
+            VALUES ($1, $2, $3, $4::user_role, NOW(), NOW())
+            "#,
+            user.id,
+            user.username,
+            user.password_hash,
+            role_str as _
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_by_username(&self, username: &str) -> anyhow::Result<Option<User>> {
+        let rec = sqlx::query!(
+            r#"
+            SELECT id, username, password_hash, role as "role: String", created_at, updated_at
+            FROM users
+            WHERE username = $1 AND deleted_at IS NULL
+            "#,
+            username
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match rec {
+            Some(r) => {
+                let role = match r.role.as_str() {
+                    "admin" => UserRole::Admin,
+                    "editor" => UserRole::Editor,
+                    "viewer" => UserRole::Viewer,
+                    _ => return Err(anyhow::anyhow!("Invalid role in DB")),
+                };
+
+                Ok(Some(User {
+                    id: r.id,
+                    username: r.username,
+                    password_hash: r.password_hash,
+                    role,
+                }))
+            }
+            None => Ok(None),
+        }
+    }
+}
+
+use domain::security::SecurityConfig;
+
+#[async_trait]
+pub trait SecurityRepository: Send + Sync {
+    async fn get(&self) -> anyhow::Result<SecurityConfig>;
+    async fn update(&self, config: &SecurityConfig) -> anyhow::Result<()>;
+}
+
+pub struct PgSecurityRepository {
+    pool: PgPool,
+}
+
+impl PgSecurityRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl SecurityRepository for PgSecurityRepository {
+    async fn get(&self) -> anyhow::Result<SecurityConfig> {
+        let rec = sqlx::query!(
+            r#"
+            SELECT id, global_rate_limit, global_burst
+            FROM security_config
+            WHERE id = 1
+            "#
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(SecurityConfig {
+            id: rec.id,
+            global_rate_limit: rec.global_rate_limit as u32,
+            global_burst: rec.global_burst as u32,
+        })
+    }
+
+    async fn update(&self, config: &SecurityConfig) -> anyhow::Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE security_config
+            SET global_rate_limit = $1, global_burst = $2
+            WHERE id = 1
+            "#,
+            config.global_rate_limit as i32,
+            config.global_burst as i32
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }

@@ -13,17 +13,17 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/observability/metrics': {
-        target: 'http://localhost:9111',
+        target: 'http://127.0.0.1:9111',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/observability\/metrics/, '/metrics'),
       },
       '/observability': {
-        target: 'http://localhost:9111',
+        target: 'http://127.0.0.1:9111',
         changeOrigin: true,
       }
     }

@@ -21,11 +21,17 @@ impl AnalyticsDb {
                 path TEXT NOT NULL,
                 status INTEGER NOT NULL,
                 duration_ms DOUBLE PRECISION NOT NULL,
-                tenant_id TEXT NOT NULL
+                tenant_id TEXT NOT NULL,
+                client_ip TEXT NOT NULL DEFAULT 'unknown'
             )",
         )
         .execute(&pool)
         .await?;
+
+        // Ensure column exists (migration for existing dev db)
+        let _ = sqlx::query("ALTER TABLE request_logs ADD COLUMN IF NOT EXISTS client_ip TEXT NOT NULL DEFAULT 'unknown'")
+            .execute(&pool)
+            .await;
 
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_timestamp ON request_logs(timestamp)")
             .execute(&pool)
@@ -36,8 +42,8 @@ impl AnalyticsDb {
 
     pub async fn insert(&self, entry: &proxy::observability::RecentRequest) -> anyhow::Result<()> {
         sqlx::query(
-            "INSERT INTO request_logs (timestamp, method, path, status, duration_ms, tenant_id)
-             VALUES ($1, $2, $3, $4, $5, $6)",
+            "INSERT INTO request_logs (timestamp, method, path, status, duration_ms, tenant_id, client_ip)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
         )
         .bind(entry.timestamp)
         .bind(&entry.method)
@@ -45,6 +51,7 @@ impl AnalyticsDb {
         .bind(entry.status as i32)
         .bind(entry.duration_ms)
         .bind(&entry.tenant_id)
+        .bind(&entry.client_ip)
         .execute(&self.pool)
         .await?;
 
@@ -91,9 +98,10 @@ impl AnalyticsDb {
                 i32,
                 f64,
                 String,
+                String,
             ),
         >(
-            "SELECT timestamp, method, path, status, duration_ms, tenant_id
+            "SELECT timestamp, method, path, status, duration_ms, tenant_id, client_ip
              FROM request_logs
              ORDER BY timestamp DESC
              LIMIT $1",
@@ -104,7 +112,7 @@ impl AnalyticsDb {
 
         let results = rows
             .into_iter()
-            .map(|(ts, method, path, status, duration, tenant)| {
+            .map(|(ts, method, path, status, duration, tenant, ip)| {
                 proxy::observability::RecentRequest {
                     timestamp: ts,
                     method,
@@ -112,6 +120,7 @@ impl AnalyticsDb {
                     status: status as u16,
                     duration_ms: duration,
                     tenant_id: tenant,
+                    client_ip: ip,
                 }
             })
             .collect();

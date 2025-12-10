@@ -4,6 +4,7 @@ use chrono::Utc;
 use domain::{
     policy::{LimitPolicy, Policy},
     route::Route,
+    security::SecurityConfig,
     service::Service,
     tenant::Tenant,
 };
@@ -52,6 +53,11 @@ impl SnapshotBuilder {
         self
     }
 
+    pub fn with_security(mut self, security: SecurityConfig) -> Self {
+        self.snapshot.security = security;
+        self
+    }
+
     /// Finalizes the snapshot by calling hash and "signing" it.
     /// In a real system, you'd pass a KeyPair here.
     pub fn build(mut self) -> anyhow::Result<Snapshot> {
@@ -67,6 +73,7 @@ impl SnapshotBuilder {
             &self.snapshot.policies,
             &self.snapshot.limit_policies,
             &self.snapshot.api_keys,
+            &self.snapshot.security,
         );
         let canonical_json = serde_json::to_string(&data_tuple)?;
 

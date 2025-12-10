@@ -3,6 +3,18 @@
 **Drizzle Gateway** is an enterprise-grade, multi-tenant, programmable API gateway and zero-trust access proxy built on [Pingora](https://github.com/cloudflare/pingora).  
 It is designed for extensibility, security, and observability from day one.
 
+## Security & Resilience
+Drizzle includes built-in mechanisms to protect against common attacks:
+*   **IP-Based Rate Limiting**: Automatically limits requests per IP (Default: 100 RPS, 50 Burst) using a Token Bucket algorithm.
+*   **Timeouts**: Enforces strict timeouts (3s connect, 5s read/write) on upstream connections to prevent resource exhaustion.
+*   **Zero Trust Authorization**: "Default Deny" policy engine powered by Cedar Agent.
+
+## Architecture
+Drizzle consists of three main components:
+*   **Control Plane (Admin API)**: Manages configuration (Tenants, Services, Routes, Policies).
+*   **Data Plane (Gateway)**: High-performance proxy based on Pingora.
+*   **Console**: React-based dashboard for management and observability.
+
 ---
 
 ## 🚀 Features

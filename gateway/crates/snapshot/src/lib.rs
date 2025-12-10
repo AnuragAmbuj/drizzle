@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use domain::{
     policy::{LimitPolicy, Policy},
     route::Route,
+    security::SecurityConfig,
     service::Service,
     tenant::Tenant,
 };
@@ -27,6 +28,7 @@ pub struct Snapshot {
     pub routes: Vec<Route>,
     pub policies: Vec<Policy>,
     pub limit_policies: Vec<LimitPolicy>,
+    pub security: SecurityConfig,
 
     /// API Keys: Key -> Identity Subject (Tenant ID or User ID)
     #[serde(default)]
@@ -54,6 +56,7 @@ impl Default for Snapshot {
             routes: vec![],
             policies: vec![],
             limit_policies: vec![],
+            security: SecurityConfig::default(),
             api_keys: HashMap::new(),
             metadata: SnapshotMetadata {
                 issuer: "unknown".to_string(),

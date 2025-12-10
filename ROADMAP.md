@@ -70,21 +70,19 @@
 
 ---
 
-## M5 — Plugins & Transforms
-**Goal:** Extensibility and programmable request/response handling.
+## M4.5 — Console Enhancements & Operations
+**Goal:** Enterprise-grade console features (RBAC, Live Logs) and Kubernetes readiness.
 
-- [ ] Define plugin SDK (Rust traits).
-- [ ] WASM plugin host with capability sandbox (wasmtime).
-- [ ] Hook lifecycle: `on_request`, `on_route`, `on_upstream`, `on_response`, `on_error`.
-- [ ] Built-in transforms: header mutation, JSON guard, HMAC signing.
-- [ ] Example Rust + WASM plugins in `/plugins`.
-- [ ] Conformance tests for plugins.
+- [ ] **Console RBAC**: Implement Role-Based Access Control for UI access (Admin vs Viewer vs Editor).
+- [ ] **Full Config UI**: Complete UI forms for Routes, Upstreams, Policies, and Limits (schema-driven).
+- [ ] **LiveLog View**: Real-time streaming of gateway and component logs via WebSocket/SSE to Console.
+- [ ] **Kubernetes Support**: Helm charts or manifests for deploying Gateway + Control Plane + Console as Service/Ingress.
 
-✅ *Deliverable:* Safe extensibility model with real example plugins.
+✅ *Deliverable:* Fully operational console with detailed access control and K8s deployment capability.
 
 ---
 
-## M6 — Hardening & Scale
+## M5 — Hardening & Scale
 **Goal:** Production readiness and scale.
 
 - [ ] Fuzzing (HTTP parser, JWT, routing).
@@ -96,6 +94,22 @@
 - [ ] Documentation & runbooks (ops, on-call).
 
 ✅ *Deliverable:* Hardened, observable, globally deployable gateway with rollback safety.
+
+---
+
+## M6 (Postponed) — Plugins & Transforms
+**Goal:** Extensibility and programmable request/response handling.
+
+- [ ] Define plugin SDK (Rust traits).
+- [ ] WASM plugin host with capability sandbox (wasmtime).
+- [ ] Hook lifecycle: `on_request`, `on_route`, `on_upstream`, `on_response`, `on_error`.
+- [ ] Built-in transforms: header mutation, JSON guard, HMAC signing.
+- [ ] Example Rust + WASM plugins in `/plugins`.
+- [ ] Conformance tests for plugins.
+
+⚠️ *Status:* Postponed due to complexity.
+
+✅ *Deliverable:* Safe extensibility model with real example plugins.
 
 ---
 
